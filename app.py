@@ -7,7 +7,6 @@ import praw
 import feedparser
 from pytrends.request import TrendReq
 from textblob import TextBlob
-from time import time
 
 # Load environment variables
 load_dotenv()
@@ -28,13 +27,9 @@ RSS_FEEDS = {
 
 DATABASE = "nooscope.db"
 
-# Cache for Google Trends
-google_trends_cache = {"data": None, "timestamp": 0}
-CACHE_EXPIRY = 3600  # 1 hour
-
 
 def init_db():
-    """Initialize the SQLite database."""
+    """Ensure the database and table are initialized."""
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     try:
@@ -55,26 +50,13 @@ def init_db():
         conn.close()
 
 
-def save_to_db(source, topic, sentiment):
-    """Save trend data to the SQLite database."""
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    try:
-        cursor.execute("INSERT INTO trends (source, topic, sentiment) VALUES (?, ?, ?)", (source, topic, sentiment))
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Error saving to database: {e}")
-    finally:
-        conn.close()
-
-
 @app.route('/')
 def index():
     """Render the main dashboard."""
+    init_db()  # Ensure database is initialized before querying
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
-    # Fetch data for display
     cursor.execute("SELECT topic, sentiment, date FROM trends WHERE source = 'RSS Feed'")
     rss_data = cursor.fetchall()
     cursor.execute("SELECT topic, sentiment, date FROM trends WHERE source = 'Google Trends'")
@@ -90,6 +72,7 @@ def index():
 @app.route('/fetch-data', methods=['GET'])
 def fetch_data():
     """Fetch data from all sources and save to the database."""
+    init_db()  # Ensure database is initialized before inserting data
     try:
         # RSS Feeds
         for source, url in RSS_FEEDS.items():
@@ -116,24 +99,19 @@ def fetch_data():
         return jsonify({"error": f"Error fetching data: {e}"}), 500
 
 
-@app.route('/check-db', methods=['GET'])
-def check_db():
-    """Check if the database and table exist."""
+def save_to_db(source, topic, sentiment):
+    """Save trend data to the SQLite database."""
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='trends';")
-        table_exists = cursor.fetchone()
-        if table_exists:
-            return jsonify({"status": "Table 'trends' exists in the database."})
-        else:
-            return jsonify({"error": "Table 'trends' does not exist."}), 500
+        cursor.execute("INSERT INTO trends (source, topic, sentiment) VALUES (?, ?, ?)", (source, topic, sentiment))
+        conn.commit()
     except sqlite3.Error as e:
-        return jsonify({"error": f"Database error: {e}"}), 500
+        print(f"Error saving to database: {e}")
     finally:
         conn.close()
 
 
 if __name__ == '__main__':
-    init_db()  # Ensure the database and table exist
+    init_db()  # Ensure database and table are created at startup
     app.run(host='0.0.0.0', port=5000)

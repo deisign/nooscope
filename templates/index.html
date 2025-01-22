@@ -36,59 +36,56 @@
     </div>
 
     <script>
-        // Fetch and display Reddit Trends
-        fetch('/reddit-trends')
-            .then(response => response.json())
-            .then(data => {
-                const results = document.getElementById('reddit-results');
-                data.forEach(trend => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item';
-                    li.innerHTML = `<a href="${trend.url}" target="_blank">${trend.title}</a>`;
-                    results.appendChild(li);
-                });
-            });
+        async function fetchData(url, elementId) {
+            const results = document.getElementById(elementId);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                results.innerHTML = ''; // Clear previous results
 
-        // Fetch and display News Headlines
-        fetch('/news-headlines')
-            .then(response => response.json())
-            .then(data => {
-                const results = document.getElementById('news-results');
-                data.forEach(news => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item';
-                    li.innerHTML = `<a href="${news.url}" target="_blank">${news.title}</a>`;
-                    results.appendChild(li);
-                });
-            });
+                // Check if data is empty or contains error
+                if (data.error) {
+                    results.innerHTML = `<li class="text-danger">Error: ${data.error}</li>`;
+                    console.error(`Error fetching ${url}:`, data.error);
+                    return;
+                }
+                if (data.length === 0 || Object.keys(data).length === 0) {
+                    results.innerHTML = `<li class="text-muted">No data available</li>`;
+                    return;
+                }
 
-        // Fetch and display RSS Feeds
-        fetch('/rss-feed')
-            .then(response => response.json())
-            .then(data => {
-                const results = document.getElementById('rss-results');
-                for (const [country, feeds] of Object.entries(data)) {
-                    feeds.forEach(feed => {
+                // Populate the list with data
+                if (Array.isArray(data)) {
+                    data.forEach(item => {
                         const li = document.createElement('li');
                         li.className = 'list-group-item';
-                        li.innerHTML = `<a href="${feed.link}" target="_blank">${feed.title} (${country})</a>`;
+                        li.innerHTML = `<a href="${item.url || item.link}" target="_blank">${item.title}</a>`;
                         results.appendChild(li);
                     });
-                });
-            });
+                } else {
+                    for (const [key, value] of Object.entries(data)) {
+                        value.forEach(item => {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item';
+                            li.innerHTML = `<a href="${item.link}" target="_blank">${item.title} (${key})</a>`;
+                            results.appendChild(li);
+                        });
+                    }
+                }
+            } catch (error) {
+                results.innerHTML = `<li class="text-danger">Error fetching data: ${error.message}</li>`;
+                console.error(`Error fetching ${url}:`, error);
+            }
+        }
 
-        // Fetch and display Google Trends
-        fetch('/google-trends')
-            .then(response => response.json())
-            .then(data => {
-                const results = document.getElementById('google-results');
-                for (const [date, trends] of Object.entries(data)) {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item';
-                    li.textContent = `${date}: Ukraine (${trends.Ukraine}), Russia (${trends.Russia})`;
-                    results.appendChild(li);
-                });
-            });
+        // Automatically fetch data and populate sections
+        fetchData('/reddit-trends', 'reddit-results');
+        fetchData('/news-headlines', 'news-results');
+        fetchData('/rss-feed', 'rss-results');
+        fetchData('/google-trends', 'google-results');
     </script>
 </body>
 </html>

@@ -84,44 +84,24 @@ def get_rss_feed():
 
 @app.route('/google-trends', methods=['GET'])
 def get_google_trends():
-    """Fetch related queries for Ukraine and Russia from Google Trends."""
+    """Fetch trending searches from Google Trends."""
     global google_trends_cache
     current_time = time()
 
+    # Check cache validity
     if google_trends_cache["data"] and (current_time - google_trends_cache["timestamp"] < CACHE_EXPIRY):
         return jsonify(google_trends_cache["data"])
 
     try:
-        pytrends = TrendReq()
-        related_queries = {}
+        pytrends = TrendReq(hl='en-US', tz=360)
+        trending_searches = pytrends.trending_searches()
+        trends = [{"topic": row[0]} for _, row in trending_searches.iterrows()]
 
-        # Fetch related queries for Ukraine
-        pytrends.build_payload(kw_list=["Ukraine"], geo="UA", timeframe="now 7-d")
-        ukraine_related = pytrends.related_queries()
-        if (
-            "Ukraine" in ukraine_related
-            and "rising" in ukraine_related["Ukraine"]
-            and isinstance(ukraine_related["Ukraine"]["rising"], list)
-        ):
-            related_queries["Ukraine"] = ukraine_related["Ukraine"]["rising"]
-        else:
-            related_queries["Ukraine"] = [{"query": "No data available", "value": None}]
-
-        # Fetch related queries for Russia
-        pytrends.build_payload(kw_list=["Russia"], geo="RU", timeframe="now 7-d")
-        russia_related = pytrends.related_queries()
-        if (
-            "Russia" in russia_related
-            and "rising" in russia_related["Russia"]
-            and isinstance(russia_related["Russia"]["rising"], list)
-        ):
-            related_queries["Russia"] = russia_related["Russia"]["rising"]
-        else:
-            related_queries["Russia"] = [{"query": "No data available", "value": None}]
-
-        google_trends_cache = {"data": related_queries, "timestamp": current_time}
-        return jsonify(related_queries)
+        # Cache the results
+        google_trends_cache = {"data": trends, "timestamp": current_time}
+        return jsonify(trends)
     except Exception as e:
+        print(f"Error fetching Google Trends data: {e}")
         return jsonify({"error": f"Google Trends error: {e}"}), 500
 
 if __name__ == '__main__':

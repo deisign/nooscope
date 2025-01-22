@@ -5,6 +5,7 @@ import requests
 import praw
 import feedparser
 from pytrends.request import TrendReq
+from textblob import TextBlob
 from time import time
 
 # Load environment variables
@@ -49,7 +50,8 @@ def get_reddit_trends():
     trends = []
     try:
         for submission in REDDIT.subreddit("all").hot(limit=10):
-            trends.append({"title": submission.title, "url": submission.url})
+            sentiment = TextBlob(submission.title).sentiment.polarity
+            trends.append({"title": submission.title, "url": submission.url, "sentiment": sentiment})
         reddit_trends_cache = {"data": trends, "timestamp": current_time}
     except Exception as e:
         return jsonify({"error": f"Reddit error: {e}"}), 500
@@ -62,7 +64,14 @@ def get_news_headlines():
         response = requests.get(f"{NEWS_API_URL}?country=us&apiKey={NEWS_API_KEY}")
         response.raise_for_status()
         data = response.json()
-        articles = [{"title": article["title"], "url": article["url"]} for article in data.get("articles", [])]
+        articles = [
+            {
+                "title": article["title"],
+                "url": article["url"],
+                "sentiment": TextBlob(article["title"]).sentiment.polarity
+            }
+            for article in data.get("articles", [])
+        ]
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"News API error: {e}"}), 500
     return jsonify(articles)
@@ -75,9 +84,16 @@ def get_rss_feed():
         for country, url in RSS_FEEDS.items():
             feed = feedparser.parse(url)
             if feed.entries:
-                feeds[country] = [{"title": entry.title, "link": entry.link} for entry in feed.entries[:5]]
+                feeds[country] = [
+                    {
+                        "title": entry.title,
+                        "link": entry.link,
+                        "sentiment": TextBlob(entry.title).sentiment.polarity
+                    }
+                    for entry in feed.entries[:5]
+                ]
             else:
-                feeds[country] = [{"title": "No data available", "link": "#"}]
+                feeds[country] = [{"title": "No data available", "link": "#", "sentiment": None}]
     except Exception as e:
         return jsonify({"error": f"RSS error: {e}"}), 500
     return jsonify(feeds)
@@ -95,7 +111,14 @@ def get_google_trends():
     try:
         pytrends = TrendReq(hl='en-US', tz=360)
         trending_searches = pytrends.trending_searches()
-        trends = [{"topic": row[0]} for _, row in trending_searches.iterrows()]
+        trends = [
+            {
+                "rank": idx + 1,
+                "topic": row[0],
+                "sentiment": TextBlob(row[0]).sentiment.polarity
+            }
+            for idx, row in trending_searches.iterrows()
+        ]
 
         # Cache the results
         google_trends_cache = {"data": trends, "timestamp": current_time}

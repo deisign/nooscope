@@ -103,14 +103,20 @@ def get_google_trends():
         pytrends = TrendReq()
         pytrends.build_payload(kw_list=["Ukraine", "Russia"], geo="UA", timeframe="now 7-d")
         trends = pytrends.interest_over_time()
+
         if not trends.empty:
-            data = trends.to_dict("index")
-            google_trends_cache = {"data": data, "timestamp": current_time}  # Update cache
+            # Преобразование ключей Timestamp в строковый формат
+            data = {
+                timestamp.strftime("%Y-%m-%d %H:%M:%S"): values.to_dict()
+                for timestamp, values in trends.iterrows()
+            }
+            google_trends_cache = {"data": data, "timestamp": current_time}  # Обновление кэша
             print("Google Trends data fetched successfully.")
             return jsonify(data)
     except Exception as e:
         print(f"Error fetching Google Trends: {e}")
         return jsonify({"error": "Unable to fetch Google Trends data. Check request parameters or try again later."}), 500
+
     return jsonify({"message": "No data available"}), 404
 
 if __name__ == '__main__':

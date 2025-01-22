@@ -27,7 +27,8 @@ RSS_FEEDS = {
     "ukraine": "http://feeds.bbci.co.uk/news/world-europe-18027962/rss.xml"
 }
 
-# Cache for Google Trends
+# Cache for Reddit and Google Trends
+reddit_trends_cache = {"data": None, "timestamp": 0}
 google_trends_cache = {"data": None, "timestamp": 0}
 CACHE_EXPIRY = 3600  # Cache expiry in seconds (1 hour)
 
@@ -38,15 +39,24 @@ def home():
 
 @app.route('/reddit-trends', methods=['GET'])
 def get_reddit_trends():
-    """Fetch top trending posts from Reddit."""
+    """Fetch top trending posts from Reddit with caching."""
+    global reddit_trends_cache
+    current_time = time()
+
+    # Check cache validity
+    if reddit_trends_cache["data"] and (current_time - reddit_trends_cache["timestamp"] < CACHE_EXPIRY):
+        print("Returning cached Reddit trends data.")
+        return jsonify(reddit_trends_cache["data"])
+
     trends = []
     try:
         for submission in REDDIT.subreddit("all").hot(limit=10):
             trends.append({"title": submission.title, "url": submission.url})
+        reddit_trends_cache = {"data": trends, "timestamp": current_time}  # Update cache
         print("Reddit trends fetched successfully.")
     except Exception as e:
         print(f"Error fetching Reddit trends: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Unable to fetch Reddit trends. Check API limits or credentials."}), 500
     return jsonify(trends)
 
 @app.route('/news-headlines', methods=['GET'])
@@ -82,7 +92,7 @@ def get_google_trends():
     """Fetch Google Trends data for Ukraine and Russia with caching."""
     global google_trends_cache
     current_time = time()
-    
+
     # Check cache validity
     if google_trends_cache["data"] and (current_time - google_trends_cache["timestamp"] < CACHE_EXPIRY):
         print("Returning cached Google Trends data.")

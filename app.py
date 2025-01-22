@@ -105,18 +105,20 @@ def get_google_trends():
         # Fetch related queries for Ukraine
         pytrends.build_payload(kw_list=["Ukraine"], geo="UA", timeframe="now 7-d")
         ukraine_related = pytrends.related_queries()
-        if "Ukraine" in ukraine_related and ukraine_related["Ukraine"]["rising"] is not None:
+        print(f"Ukraine related queries raw data: {ukraine_related}")
+        if "Ukraine" in ukraine_related and "rising" in ukraine_related["Ukraine"]:
             related_queries["Ukraine"] = ukraine_related["Ukraine"]["rising"]
         else:
-            related_queries["Ukraine"] = [{"query": "No data", "value": "N/A"}]
+            related_queries["Ukraine"] = [{"query": "No data available", "value": None}]
 
         # Fetch related queries for Russia
         pytrends.build_payload(kw_list=["Russia"], geo="RU", timeframe="now 7-d")
         russia_related = pytrends.related_queries()
-        if "Russia" in russia_related and russia_related["Russia"]["rising"] is not None:
+        print(f"Russia related queries raw data: {russia_related}")
+        if "Russia" in russia_related and "rising" in russia_related["Russia"]:
             related_queries["Russia"] = russia_related["Russia"]["rising"]
         else:
-            related_queries["Russia"] = [{"query": "No data", "value": "N/A"}]
+            related_queries["Russia"] = [{"query": "No data available", "value": None}]
 
         # Update cache
         google_trends_cache = {"data": related_queries, "timestamp": current_time}

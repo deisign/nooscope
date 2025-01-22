@@ -8,38 +8,51 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center">Welcome to Nooscope</h1>
-        <div class="row">
-            <div class="col-md-6">
-                <h2>News</h2>
-                <form id="news-form">
-                    <input type="text" id="news-query" class="form-control" placeholder="Enter a topic (e.g., technology)">
-                    <button type="submit" class="btn btn-primary mt-2">Search</button>
-                </form>
-                <ul id="news-results" class="list-group mt-3"></ul>
-            </div>
-            <div class="col-md-6">
-                <h2>Reddit Trends</h2>
-                <form id="reddit-form">
-                    <input type="text" id="reddit-subreddit" class="form-control" placeholder="Enter a subreddit (e.g., all)">
-                    <button type="submit" class="btn btn-primary mt-2">Get Trends</button>
-                </form>
-                <ul id="reddit-results" class="list-group mt-3"></ul>
-            </div>
+        <h1 class="text-center">Nooscope Dashboard</h1>
+
+        <!-- RSS Feed -->
+        <div class="mt-4">
+            <h2>RSS Feed</h2>
+            <form id="rss-form">
+                <select id="rss-category" class="form-select">
+                    <option value="general">General</option>
+                    <option value="technology">Technology</option>
+                    <option value="world">World</option>
+                </select>
+                <button type="submit" class="btn btn-primary mt-2">Load Feed</button>
+            </form>
+            <ul id="rss-results" class="list-group mt-3"></ul>
+        </div>
+
+        <!-- Reddit Trends -->
+        <div class="mt-4">
+            <h2>Reddit Trends</h2>
+            <form id="reddit-form">
+                <input type="text" id="reddit-subreddit" class="form-control" placeholder="Enter a subreddit (e.g., all)">
+                <button type="submit" class="btn btn-primary mt-2">Get Trends</button>
+            </form>
+            <ul id="reddit-results" class="list-group mt-3"></ul>
+        </div>
+
+        <!-- Placeholder for Image -->
+        <div class="mt-4">
+            <h2>Information on Russia and Ukraine</h2>
+            <img src="https://via.placeholder.com/800x400.png?text=Russia+and+Ukraine+Info" alt="Info Map" class="img-fluid">
         </div>
     </div>
+
     <script>
-        document.getElementById('news-form').addEventListener('submit', async (e) => {
+        document.getElementById('rss-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const query = document.getElementById('news-query').value;
-            const response = await fetch(`/news?query=${query}`);
+            const category = document.getElementById('rss-category').value;
+            const response = await fetch(`/rss?category=${category}`);
             const data = await response.json();
-            const results = document.getElementById('news-results');
+            const results = document.getElementById('rss-results');
             results.innerHTML = '';
-            data.articles.forEach(article => {
+            data.forEach(item => {
                 const li = document.createElement('li');
-                li.textContent = `${article.title} - ${article.url}`;
                 li.className = 'list-group-item';
+                li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
                 results.appendChild(li);
             });
         });
@@ -53,8 +66,8 @@
             results.innerHTML = '';
             data.forEach(trend => {
                 const li = document.createElement('li');
-                li.textContent = `${trend.title} - ${trend.url}`;
                 li.className = 'list-group-item';
+                li.innerHTML = `<a href="${trend.url}" target="_blank">${trend.title}</a>`;
                 results.appendChild(li);
             });
         });

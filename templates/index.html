@@ -4,88 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nooscope Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container mt-5">
         <h1 class="text-center">Nooscope Dashboard</h1>
 
         <!-- Reddit Trends -->
-        <div class="mt-4">
-            <h2>Reddit Trends</h2>
-            <ul id="reddit-results" class="list-group"></ul>
-        </div>
+        <h2>Reddit Trends</h2>
+        <ul id="reddit-trends"></ul>
 
         <!-- News Headlines -->
-        <div class="mt-4">
-            <h2>Top News Headlines</h2>
-            <ul id="news-results" class="list-group"></ul>
-        </div>
+        <h2>Top News Headlines</h2>
+        <ul id="news-headlines"></ul>
 
         <!-- RSS Feeds -->
-        <div class="mt-4">
-            <h2>RSS Feeds</h2>
-            <ul id="rss-results" class="list-group"></ul>
-        </div>
+        <h2>RSS Feeds</h2>
+        <h3>Russia</h3>
+        <ul id="rss-russia"></ul>
+        <h3>Ukraine</h3>
+        <ul id="rss-ukraine"></ul>
 
         <!-- Google Trends -->
-        <div class="mt-4">
-            <h2>Google Trends</h2>
-            <ul id="google-results" class="list-group"></ul>
-        </div>
+        <h2>Google Trends</h2>
+        <ul id="google-trends"></ul>
     </div>
 
     <script>
-        async function fetchData(url, elementId) {
-            const results = document.getElementById(elementId);
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
-                }
-                const data = await response.json();
-                results.innerHTML = ''; // Clear previous results
+        // Fetch Reddit trends
+        fetch('/reddit-trends')
+            .then(response => response.json())
+            .then(data => {
+                const redditList = document.getElementById('reddit-trends');
+                data.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="${item.url}" target="_blank">${item.title}</a>`;
+                    redditList.appendChild(li);
+                });
+            });
 
-                // Check if data is empty or contains error
-                if (data.error) {
-                    results.innerHTML = `<li class="text-danger">Error: ${data.error}</li>`;
-                    console.error(`Error fetching ${url}:`, data.error);
-                    return;
-                }
-                if (data.length === 0 || Object.keys(data).length === 0) {
-                    results.innerHTML = `<li class="text-muted">No data available</li>`;
-                    return;
-                }
+        // Fetch News headlines
+        fetch('/news-headlines')
+            .then(response => response.json())
+            .then(data => {
+                const newsList = document.getElementById('news-headlines');
+                data.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="${item.url}" target="_blank">${item.title}</a>`;
+                    newsList.appendChild(li);
+                });
+            });
 
-                // Populate the list with data
-                if (Array.isArray(data)) {
-                    data.forEach(item => {
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item';
-                        li.innerHTML = `<a href="${item.url || item.link}" target="_blank">${item.title}</a>`;
-                        results.appendChild(li);
-                    });
-                } else {
-                    for (const [key, value] of Object.entries(data)) {
-                        value.forEach(item => {
-                            const li = document.createElement('li');
-                            li.className = 'list-group-item';
-                            li.innerHTML = `<a href="${item.link}" target="_blank">${item.title} (${key})</a>`;
-                            results.appendChild(li);
-                        });
-                    }
-                }
-            } catch (error) {
-                results.innerHTML = `<li class="text-danger">Error fetching data: ${error.message}</li>`;
-                console.error(`Error fetching ${url}:`, error);
-            }
-        }
+        // Fetch RSS feeds
+        fetch('/rss-feed')
+            .then(response => response.json())
+            .then(data => {
+                const rssRussia = document.getElementById('rss-russia');
+                const rssUkraine = document.getElementById('rss-ukraine');
+                data.russia.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
+                    rssRussia.appendChild(li);
+                });
+                data.ukraine.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
+                    rssUkraine.appendChild(li);
+                });
+            });
 
-        // Automatically fetch data and populate sections
-        fetchData('/reddit-trends', 'reddit-results');
-        fetchData('/news-headlines', 'news-results');
-        fetchData('/rss-feed', 'rss-results');
-        fetchData('/google-trends', 'google-results');
+        // Fetch Google Trends
+        fetch('/google-trends')
+            .then(response => response.json())
+            .then(data => {
+                const trendsList = document.getElementById('google-trends');
+                for (const [timestamp, values] of Object.entries(data)) {
+                    const li = document.createElement('li');
+                    li.textContent = `${timestamp}: Ukraine - ${values['Ukraine']}, Russia - ${values['Russia']}`;
+                    trendsList.appendChild(li);
+                }
+            });
     </script>
 </body>
 </html>

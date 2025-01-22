@@ -34,9 +34,13 @@ def home():
 @app.route('/reddit-trends', methods=['GET'])
 def get_reddit_trends():
     """Fetch top trending posts from Reddit."""
+    trends = []
     try:
-        trends = [{"title": submission.title, "url": submission.url} for submission in REDDIT.subreddit("all").hot(limit=10)]
+        for submission in REDDIT.subreddit("all").hot(limit=10):
+            trends.append({"title": submission.title, "url": submission.url})
+        print("Reddit trends fetched successfully.")
     except Exception as e:
+        print(f"Error fetching Reddit trends: {e}")
         return jsonify({"error": str(e)}), 500
     return jsonify(trends)
 
@@ -45,9 +49,12 @@ def get_news_headlines():
     """Fetch top news headlines."""
     try:
         response = requests.get(f"{NEWS_API_URL}?country=us&apiKey={NEWS_API_KEY}")
+        response.raise_for_status()
         data = response.json()
         articles = [{"title": article["title"], "url": article["url"]} for article in data.get("articles", [])]
-    except Exception as e:
+        print("News headlines fetched successfully.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching news headlines: {e}")
         return jsonify({"error": str(e)}), 500
     return jsonify(articles)
 
@@ -59,7 +66,9 @@ def get_rss_feed():
         for country, url in RSS_FEEDS.items():
             feed = feedparser.parse(url)
             feeds[country] = [{"title": entry.title, "link": entry.link} for entry in feed.entries[:5]]
+            print(f"RSS feed for {country} fetched successfully.")
     except Exception as e:
+        print(f"Error fetching RSS feeds: {e}")
         return jsonify({"error": str(e)}), 500
     return jsonify(feeds)
 
@@ -72,8 +81,10 @@ def get_google_trends():
         trends = pytrends.interest_over_time()
         if not trends.empty:
             data = trends.to_dict("index")
+            print("Google Trends data fetched successfully.")
             return jsonify(data)
     except Exception as e:
+        print(f"Error fetching Google Trends: {e}")
         return jsonify({"error": str(e)}), 500
     return jsonify({"message": "No data available"}), 404
 

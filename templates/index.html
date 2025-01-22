@@ -3,74 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nooscope</title>
+    <title>Nooscope Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
 </head>
 <body>
     <div class="container mt-5">
         <h1 class="text-center">Nooscope Dashboard</h1>
 
-        <!-- RSS Feed -->
-        <div class="mt-4">
-            <h2>RSS Feed</h2>
-            <form id="rss-form">
-                <select id="rss-category" class="form-select">
-                    <option value="general">General</option>
-                    <option value="technology">Technology</option>
-                    <option value="world">World</option>
-                </select>
-                <button type="submit" class="btn btn-primary mt-2">Load Feed</button>
-            </form>
-            <ul id="rss-results" class="list-group mt-3"></ul>
-        </div>
-
         <!-- Reddit Trends -->
         <div class="mt-4">
             <h2>Reddit Trends</h2>
-            <form id="reddit-form">
-                <input type="text" id="reddit-subreddit" class="form-control" placeholder="Enter a subreddit (e.g., all)">
-                <button type="submit" class="btn btn-primary mt-2">Get Trends</button>
-            </form>
-            <ul id="reddit-results" class="list-group mt-3"></ul>
+            <ul id="reddit-results" class="list-group"></ul>
         </div>
 
-        <!-- Placeholder for Image -->
+        <!-- News Headlines -->
         <div class="mt-4">
-            <h2>Information on Russia and Ukraine</h2>
-            <img src="https://via.placeholder.com/800x400.png?text=Russia+and+Ukraine+Info" alt="Info Map" class="img-fluid">
+            <h2>Top News Headlines</h2>
+            <ul id="news-results" class="list-group"></ul>
+        </div>
+
+        <!-- RSS Feeds -->
+        <div class="mt-4">
+            <h2>RSS Feeds</h2>
+            <ul id="rss-results" class="list-group"></ul>
+        </div>
+
+        <!-- Google Trends -->
+        <div class="mt-4">
+            <h2>Google Trends</h2>
+            <ul id="google-results" class="list-group"></ul>
         </div>
     </div>
 
     <script>
-        document.getElementById('rss-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const category = document.getElementById('rss-category').value;
-            const response = await fetch(`/rss?category=${category}`);
-            const data = await response.json();
-            const results = document.getElementById('rss-results');
-            results.innerHTML = '';
-            data.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item';
-                li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
-                results.appendChild(li);
+        // Fetch and display Reddit Trends
+        fetch('/reddit-trends')
+            .then(response => response.json())
+            .then(data => {
+                const results = document.getElementById('reddit-results');
+                data.forEach(trend => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.innerHTML = `<a href="${trend.url}" target="_blank">${trend.title}</a>`;
+                    results.appendChild(li);
+                });
             });
-        });
 
-        document.getElementById('reddit-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const subreddit = document.getElementById('reddit-subreddit').value;
-            const response = await fetch(`/reddit?subreddit=${subreddit}`);
-            const data = await response.json();
-            const results = document.getElementById('reddit-results');
-            results.innerHTML = '';
-            data.forEach(trend => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item';
-                li.innerHTML = `<a href="${trend.url}" target="_blank">${trend.title}</a>`;
-                results.appendChild(li);
+        // Fetch and display News Headlines
+        fetch('/news-headlines')
+            .then(response => response.json())
+            .then(data => {
+                const results = document.getElementById('news-results');
+                data.forEach(news => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.innerHTML = `<a href="${news.url}" target="_blank">${news.title}</a>`;
+                    results.appendChild(li);
+                });
             });
-        });
+
+        // Fetch and display RSS Feeds
+        fetch('/rss-feed')
+            .then(response => response.json())
+            .then(data => {
+                const results = document.getElementById('rss-results');
+                for (const [country, feeds] of Object.entries(data)) {
+                    feeds.forEach(feed => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.innerHTML = `<a href="${feed.link}" target="_blank">${feed.title} (${country})</a>`;
+                        results.appendChild(li);
+                    });
+                });
+            });
+
+        // Fetch and display Google Trends
+        fetch('/google-trends')
+            .then(response => response.json())
+            .then(data => {
+                const results = document.getElementById('google-results');
+                for (const [date, trends] of Object.entries(data)) {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.textContent = `${date}: Ukraine (${trends.Ukraine}), Russia (${trends.Russia})`;
+                    results.appendChild(li);
+                });
+            });
     </script>
 </body>
 </html>

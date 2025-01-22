@@ -74,7 +74,10 @@ def get_rss_feed():
     try:
         for country, url in RSS_FEEDS.items():
             feed = feedparser.parse(url)
-            feeds[country] = [{"title": entry.title, "link": entry.link} for entry in feed.entries[:5]]
+            if feed.entries:
+                feeds[country] = [{"title": entry.title, "link": entry.link} for entry in feed.entries[:5]]
+            else:
+                feeds[country] = [{"title": "No data available", "link": "#"}]
     except Exception as e:
         return jsonify({"error": f"RSS error: {e}"}), 500
     return jsonify(feeds)
@@ -98,7 +101,7 @@ def get_google_trends():
         if (
             "Ukraine" in ukraine_related
             and "rising" in ukraine_related["Ukraine"]
-            and ukraine_related["Ukraine"]["rising"] is not None
+            and isinstance(ukraine_related["Ukraine"]["rising"], list)
         ):
             related_queries["Ukraine"] = ukraine_related["Ukraine"]["rising"]
         else:
@@ -110,7 +113,7 @@ def get_google_trends():
         if (
             "Russia" in russia_related
             and "rising" in russia_related["Russia"]
-            and russia_related["Russia"]["rising"] is not None
+            and isinstance(russia_related["Russia"]["rising"], list)
         ):
             related_queries["Russia"] = russia_related["Russia"]["rising"]
         else:

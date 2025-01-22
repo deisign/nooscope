@@ -1,10 +1,11 @@
-# Python 
-*.pyc 
-__pycache__/ 
- 
-# Environment 
-.env 
- 
-# Misc 
-.DS_Store 
-.vscode/ 
+# Python
+*.pyc
+__pycache__/
+
+# Environment
+.env
+
+# Misc
+.DS_Store
+.vscode/
+.env

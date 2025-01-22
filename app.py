@@ -108,5 +108,5 @@ def fetch_data():
 
 
 if __name__ == '__main__':
-    init_db()
+    init_db()  # Ensure the database and table exist
     app.run(host='0.0.0.0', port=5000)

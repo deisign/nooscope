@@ -5,6 +5,7 @@ import requests
 import praw
 import feedparser
 from pytrends.request import TrendReq
+from time import time, sleep
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +26,10 @@ RSS_FEEDS = {
     "russia": "http://feeds.bbci.co.uk/news/world-europe-17839672/rss.xml",
     "ukraine": "http://feeds.bbci.co.uk/news/world-europe-18027962/rss.xml"
 }
+
+# Cache for Google Trends
+google_trends_cache = {"data": None, "timestamp": 0}
+CACHE_EXPIRY = 3600  # Cache expiry in seconds (1 hour)
 
 @app.route('/')
 def home():
@@ -74,13 +79,24 @@ def get_rss_feed():
 
 @app.route('/google-trends', methods=['GET'])
 def get_google_trends():
-    """Fetch Google Trends data for Ukraine and Russia."""
+    """Fetch Google Trends data for Ukraine and Russia with caching."""
+    global google_trends_cache
+    current_time = time()
+    
+    # Check cache validity
+    if google_trends_cache["data"] and (current_time - google_trends_cache["timestamp"] < CACHE_EXPIRY):
+        print("Returning cached Google Trends data.")
+        return jsonify(google_trends_cache["data"])
+
     try:
+        # Introduce delay to avoid being blocked
+        sleep(2)
         pytrends = TrendReq()
         pytrends.build_payload(kw_list=["Ukraine", "Russia"], geo="UA", timeframe="now 7-d")
         trends = pytrends.interest_over_time()
         if not trends.empty:
             data = trends.to_dict("index")
+            google_trends_cache = {"data": data, "timestamp": current_time}  # Update cache
             print("Google Trends data fetched successfully.")
             return jsonify(data)
     except Exception as e:

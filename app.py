@@ -89,35 +89,36 @@ def get_rss_feed():
 
 @app.route('/google-trends', methods=['GET'])
 def get_google_trends():
-    """Fetch Google Trends data for Ukraine and Russia with caching."""
+    """Fetch related queries for Ukraine and Russia from Google Trends."""
     global google_trends_cache
     current_time = time()
 
     # Check cache validity
     if google_trends_cache["data"] and (current_time - google_trends_cache["timestamp"] < CACHE_EXPIRY):
-        print("Returning cached Google Trends data.")
+        print("Returning cached Google Trends related queries.")
         return jsonify(google_trends_cache["data"])
 
     try:
-        sleep(5)  # Задержка для предотвращения блокировки
         pytrends = TrendReq()
-        pytrends.build_payload(kw_list=["Ukraine", "Russia"], geo="UA", timeframe="now 7-d")
-        trends = pytrends.interest_over_time()
+        related_queries = {}
 
-        if not trends.empty:
-            # Преобразование ключей Timestamp в строковый формат
-            data = {
-                timestamp.strftime("%Y-%m-%d %H:%M:%S"): values.to_dict()
-                for timestamp, values in trends.iterrows()
-            }
-            google_trends_cache = {"data": data, "timestamp": current_time}  # Обновление кэша
-            print("Google Trends data fetched successfully.")
-            return jsonify(data)
+        # Fetch related queries for Ukraine
+        pytrends.build_payload(kw_list=["Ukraine"], geo="UA", timeframe="now 7-d")
+        ukraine_related = pytrends.related_queries()
+        related_queries["Ukraine"] = ukraine_related["Ukraine"]["rising"] if "Ukraine" in ukraine_related else []
+
+        # Fetch related queries for Russia
+        pytrends.build_payload(kw_list=["Russia"], geo="RU", timeframe="now 7-d")
+        russia_related = pytrends.related_queries()
+        related_queries["Russia"] = russia_related["Russia"]["rising"] if "Russia" in russia_related else []
+
+        # Update cache
+        google_trends_cache = {"data": related_queries, "timestamp": current_time}
+        print("Google Trends related queries fetched successfully.")
+        return jsonify(related_queries)
     except Exception as e:
-        print(f"Error fetching Google Trends: {e}")
-        return jsonify({"error": "Unable to fetch Google Trends data. Check request parameters or try again later."}), 500
-
-    return jsonify({"message": "No data available"}), 404
+        print(f"Error fetching Google Trends related queries: {e}")
+        return jsonify({"error": "Unable to fetch Google Trends data. Try again later."}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

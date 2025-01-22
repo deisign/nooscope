@@ -43,20 +43,16 @@ def get_reddit_trends():
     global reddit_trends_cache
     current_time = time()
 
-    # Check cache validity
     if reddit_trends_cache["data"] and (current_time - reddit_trends_cache["timestamp"] < CACHE_EXPIRY):
-        print("Returning cached Reddit trends data.")
         return jsonify(reddit_trends_cache["data"])
 
     trends = []
     try:
         for submission in REDDIT.subreddit("all").hot(limit=10):
             trends.append({"title": submission.title, "url": submission.url})
-        reddit_trends_cache = {"data": trends, "timestamp": current_time}  # Update cache
-        print("Reddit trends fetched successfully.")
+        reddit_trends_cache = {"data": trends, "timestamp": current_time}
     except Exception as e:
-        print(f"Error fetching Reddit trends: {e}")
-        return jsonify({"error": "Unable to fetch Reddit trends. Check API limits or credentials."}), 500
+        return jsonify({"error": f"Reddit error: {e}"}), 500
     return jsonify(trends)
 
 @app.route('/news-headlines', methods=['GET'])
@@ -67,10 +63,8 @@ def get_news_headlines():
         response.raise_for_status()
         data = response.json()
         articles = [{"title": article["title"], "url": article["url"]} for article in data.get("articles", [])]
-        print("News headlines fetched successfully.")
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching news headlines: {e}")
-        return jsonify({"error": "Unable to fetch news headlines. Check API key or limits."}), 500
+        return jsonify({"error": f"News API error: {e}"}), 500
     return jsonify(articles)
 
 @app.route('/rss-feed', methods=['GET'])
@@ -81,10 +75,8 @@ def get_rss_feed():
         for country, url in RSS_FEEDS.items():
             feed = feedparser.parse(url)
             feeds[country] = [{"title": entry.title, "link": entry.link} for entry in feed.entries[:5]]
-            print(f"RSS feed for {country} fetched successfully.")
     except Exception as e:
-        print(f"Error fetching RSS feeds: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"RSS error: {e}"}), 500
     return jsonify(feeds)
 
 @app.route('/google-trends', methods=['GET'])
@@ -93,9 +85,7 @@ def get_google_trends():
     global google_trends_cache
     current_time = time()
 
-    # Check cache validity
     if google_trends_cache["data"] and (current_time - google_trends_cache["timestamp"] < CACHE_EXPIRY):
-        print("Returning cached Google Trends related queries.")
         return jsonify(google_trends_cache["data"])
 
     try:
@@ -105,8 +95,11 @@ def get_google_trends():
         # Fetch related queries for Ukraine
         pytrends.build_payload(kw_list=["Ukraine"], geo="UA", timeframe="now 7-d")
         ukraine_related = pytrends.related_queries()
-        print(f"Ukraine related queries raw data: {ukraine_related}")
-        if "Ukraine" in ukraine_related and "rising" in ukraine_related["Ukraine"]:
+        if (
+            "Ukraine" in ukraine_related
+            and "rising" in ukraine_related["Ukraine"]
+            and ukraine_related["Ukraine"]["rising"] is not None
+        ):
             related_queries["Ukraine"] = ukraine_related["Ukraine"]["rising"]
         else:
             related_queries["Ukraine"] = [{"query": "No data available", "value": None}]
@@ -114,19 +107,19 @@ def get_google_trends():
         # Fetch related queries for Russia
         pytrends.build_payload(kw_list=["Russia"], geo="RU", timeframe="now 7-d")
         russia_related = pytrends.related_queries()
-        print(f"Russia related queries raw data: {russia_related}")
-        if "Russia" in russia_related and "rising" in russia_related["Russia"]:
+        if (
+            "Russia" in russia_related
+            and "rising" in russia_related["Russia"]
+            and russia_related["Russia"]["rising"] is not None
+        ):
             related_queries["Russia"] = russia_related["Russia"]["rising"]
         else:
             related_queries["Russia"] = [{"query": "No data available", "value": None}]
 
-        # Update cache
         google_trends_cache = {"data": related_queries, "timestamp": current_time}
-        print("Google Trends related queries fetched successfully.")
         return jsonify(related_queries)
     except Exception as e:
-        print(f"Error fetching Google Trends related queries: {e}")
-        return jsonify({"error": "Unable to fetch Google Trends data. Try again later."}), 500
+        return jsonify({"error": f"Google Trends error: {e}"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

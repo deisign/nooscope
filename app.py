@@ -55,7 +55,7 @@ def get_news_headlines():
         print("News headlines fetched successfully.")
     except requests.exceptions.RequestException as e:
         print(f"Error fetching news headlines: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Unable to fetch news headlines. Check API key or limits."}), 500
     return jsonify(articles)
 
 @app.route('/rss-feed', methods=['GET'])
@@ -77,7 +77,7 @@ def get_google_trends():
     """Fetch Google Trends data for Ukraine and Russia."""
     try:
         pytrends = TrendReq()
-        pytrends.build_payload(kw_list=["Ukraine", "Russia"], geo="UA,RU", timeframe="now 7-d")
+        pytrends.build_payload(kw_list=["Ukraine", "Russia"], geo="UA", timeframe="now 7-d")
         trends = pytrends.interest_over_time()
         if not trends.empty:
             data = trends.to_dict("index")
@@ -85,7 +85,7 @@ def get_google_trends():
             return jsonify(data)
     except Exception as e:
         print(f"Error fetching Google Trends: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Unable to fetch Google Trends data. Check request parameters."}), 500
     return jsonify({"message": "No data available"}), 404
 
 if __name__ == '__main__':

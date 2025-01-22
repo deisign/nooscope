@@ -12,22 +12,33 @@
 
         <!-- Reddit Trends -->
         <h2>Reddit Trends</h2>
-        <ul id="reddit-trends"></ul>
+        <ul id="reddit-trends" class="list-group mb-4"></ul>
 
         <!-- News Headlines -->
         <h2>Top News Headlines</h2>
-        <ul id="news-headlines"></ul>
+        <ul id="news-headlines" class="list-group mb-4"></ul>
 
         <!-- RSS Feeds -->
         <h2>RSS Feeds</h2>
-        <h3>Russia</h3>
-        <ul id="rss-russia"></ul>
-        <h3>Ukraine</h3>
-        <ul id="rss-ukraine"></ul>
+        <div class="mb-4">
+            <h3>Russia</h3>
+            <ul id="rss-russia" class="list-group mb-2"></ul>
+            <h3>Ukraine</h3>
+            <ul id="rss-ukraine" class="list-group"></ul>
+        </div>
 
         <!-- Google Trends -->
         <h2>Google Trends</h2>
-        <ul id="google-trends"></ul>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Ukraine</th>
+                    <th>Russia</th>
+                </tr>
+            </thead>
+            <tbody id="google-trends"></tbody>
+        </table>
     </div>
 
     <script>
@@ -38,6 +49,7 @@
                 const redditList = document.getElementById('reddit-trends');
                 data.forEach(item => {
                     const li = document.createElement('li');
+                    li.className = "list-group-item";
                     li.innerHTML = `<a href="${item.url}" target="_blank">${item.title}</a>`;
                     redditList.appendChild(li);
                 });
@@ -50,6 +62,7 @@
                 const newsList = document.getElementById('news-headlines');
                 data.forEach(item => {
                     const li = document.createElement('li');
+                    li.className = "list-group-item";
                     li.innerHTML = `<a href="${item.url}" target="_blank">${item.title}</a>`;
                     newsList.appendChild(li);
                 });
@@ -63,11 +76,13 @@
                 const rssUkraine = document.getElementById('rss-ukraine');
                 data.russia.forEach(item => {
                     const li = document.createElement('li');
+                    li.className = "list-group-item";
                     li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
                     rssRussia.appendChild(li);
                 });
                 data.ukraine.forEach(item => {
                     const li = document.createElement('li');
+                    li.className = "list-group-item";
                     li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
                     rssUkraine.appendChild(li);
                 });
@@ -77,11 +92,15 @@
         fetch('/google-trends')
             .then(response => response.json())
             .then(data => {
-                const trendsList = document.getElementById('google-trends');
+                const trendsTable = document.getElementById('google-trends');
                 for (const [timestamp, values] of Object.entries(data)) {
-                    const li = document.createElement('li');
-                    li.textContent = `${timestamp}: Ukraine - ${values['Ukraine']}, Russia - ${values['Russia']}`;
-                    trendsList.appendChild(li);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${timestamp}</td>
+                        <td>${values['Ukraine']}</td>
+                        <td>${values['Russia']}</td>
+                    `;
+                    trendsTable.appendChild(row);
                 }
             });
     </script>

@@ -89,8 +89,7 @@ def get_google_trends():
         return jsonify(google_trends_cache["data"])
 
     try:
-        # Introduce delay to avoid being blocked
-        sleep(2)
+        sleep(5)  # Задержка для предотвращения блокировки
         pytrends = TrendReq()
         pytrends.build_payload(kw_list=["Ukraine", "Russia"], geo="UA", timeframe="now 7-d")
         trends = pytrends.interest_over_time()
@@ -101,7 +100,7 @@ def get_google_trends():
             return jsonify(data)
     except Exception as e:
         print(f"Error fetching Google Trends: {e}")
-        return jsonify({"error": "Unable to fetch Google Trends data. Check request parameters."}), 500
+        return jsonify({"error": "Unable to fetch Google Trends data. Check request parameters or try again later."}), 500
     return jsonify({"message": "No data available"}), 404
 
 if __name__ == '__main__':

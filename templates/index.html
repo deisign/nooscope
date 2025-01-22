@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nooscope</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Welcome to Nooscope</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <h2>News</h2>
+                <form id="news-form">
+                    <input type="text" id="news-query" class="form-control" placeholder="Enter a topic (e.g., technology)">
+                    <button type="submit" class="btn btn-primary mt-2">Search</button>
+                </form>
+                <ul id="news-results" class="list-group mt-3"></ul>
+            </div>
+            <div class="col-md-6">
+                <h2>Reddit Trends</h2>
+                <form id="reddit-form">
+                    <input type="text" id="reddit-subreddit" class="form-control" placeholder="Enter a subreddit (e.g., all)">
+                    <button type="submit" class="btn btn-primary mt-2">Get Trends</button>
+                </form>
+                <ul id="reddit-results" class="list-group mt-3"></ul>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('news-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('news-query').value;
+            const response = await fetch(`/news?query=${query}`);
+            const data = await response.json();
+            const results = document.getElementById('news-results');
+            results.innerHTML = '';
+            data.articles.forEach(article => {
+                const li = document.createElement('li');
+                li.textContent = `${article.title} - ${article.url}`;
+                li.className = 'list-group-item';
+                results.appendChild(li);
+            });
+        });
+
+        document.getElementById('reddit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const subreddit = document.getElementById('reddit-subreddit').value;
+            const response = await fetch(`/reddit?subreddit=${subreddit}`);
+            const data = await response.json();
+            const results = document.getElementById('reddit-results');
+            results.innerHTML = '';
+            data.forEach(trend => {
+                const li = document.createElement('li');
+                li.textContent = `${trend.title} - ${trend.url}`;
+                li.className = 'list-group-item';
+                results.appendChild(li);
+            });
+        });
+    </script>
+</body>
+</html>

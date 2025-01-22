@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from dotenv import load_dotenv
 import requests
 import praw
@@ -27,11 +27,13 @@ REDDIT = praw.Reddit(
 )
 
 @app.route('/')
-def index():
-    return jsonify({"message": "Welcome to Nooscope!"})
+def home():
+    """Render the main HTML page."""
+    return render_template('index.html')
 
 @app.route('/news', methods=['GET'])
 def get_news():
+    """Fetch news articles based on a query."""
     query = request.args.get("query", "technology")
     url = f"{NEWS_API_URL}?q={query}&apiKey={NEWS_API_KEY}"
     response = requests.get(url)
@@ -39,6 +41,7 @@ def get_news():
 
 @app.route('/reddit', methods=['GET'])
 def get_reddit_trends():
+    """Fetch trending posts from a subreddit."""
     subreddit = request.args.get("subreddit", "all")
     trends = []
     try:
@@ -50,7 +53,7 @@ def get_reddit_trends():
 
 @app.route('/google-trends', methods=['GET'])
 def get_google_trends():
-    # Placeholder for Google Trends API
+    """Placeholder for Google Trends API integration."""
     return jsonify({"message": "Google Trends API integration coming soon!"})
 
 if __name__ == '__main__':

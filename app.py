@@ -37,26 +37,35 @@ def init_db():
     """Initialize the SQLite database."""
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS trends (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            source TEXT,
-            topic TEXT,
-            sentiment REAL,
-            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trends (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source TEXT,
+                topic TEXT,
+                sentiment REAL,
+                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
+        print("Database initialized: 'trends' table created or already exists.")
+    except sqlite3.Error as e:
+        print(f"Error initializing database: {e}")
+    finally:
+        conn.close()
 
 
 def save_to_db(source, topic, sentiment):
     """Save trend data to the SQLite database."""
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO trends (source, topic, sentiment) VALUES (?, ?, ?)", (source, topic, sentiment))
-    conn.commit()
-    conn.close()
+    try:
+        cursor.execute("INSERT INTO trends (source, topic, sentiment) VALUES (?, ?, ?)", (source, topic, sentiment))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error saving to database: {e}")
+    finally:
+        conn.close()
 
 
 @app.route('/')
@@ -105,6 +114,24 @@ def fetch_data():
         return jsonify({"status": "Data fetched and saved successfully"})
     except Exception as e:
         return jsonify({"error": f"Error fetching data: {e}"}), 500
+
+
+@app.route('/check-db', methods=['GET'])
+def check_db():
+    """Check if the database and table exist."""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='trends';")
+        table_exists = cursor.fetchone()
+        if table_exists:
+            return jsonify({"status": "Table 'trends' exists in the database."})
+        else:
+            return jsonify({"error": "Table 'trends' does not exist."}), 500
+    except sqlite3.Error as e:
+        return jsonify({"error": f"Database error: {e}"}), 500
+    finally:
+        conn.close()
 
 
 if __name__ == '__main__':

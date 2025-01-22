@@ -65,4 +65,22 @@ def get_reddit_trends():
     subreddit = request.args.get("subreddit", "worldnews")
     trends = []
     try:
-        for s
+        for submission in REDDIT.subreddit(subreddit).hot(limit=10):
+            trends.append({"title": submission.title, "url": submission.url})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify(trends)
+
+@app.route('/google-trends', methods=['GET'])
+def get_google_trends():
+    """Fetch Google Trends data for Russia and Ukraine."""
+    pytrends = TrendReq()
+    pytrends.build_payload(kw_list=["Ukraine", "Russia"], geo="UA,RU", timeframe="now 7-d")
+    trends = pytrends.interest_over_time()
+    if not trends.empty:
+        data = trends.to_dict("index")
+        return jsonify(data)
+    return jsonify({"message": "No data available"}), 404
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)

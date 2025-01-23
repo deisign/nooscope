@@ -61,8 +61,11 @@ def fetch_data():
             for entry in feed.entries[:5]:
                 sentiment = TextBlob(entry.title).sentiment.polarity
                 save_to_db("RSS Feed", entry.title, sentiment)
+                print(f"Saved RSS: {entry.title} with sentiment {sentiment}")
         except Exception as e:
-            errors.append(f"RSS Feed Error ({source}): {e}")
+            error_msg = f"RSS Feed Error ({source}): {e}"
+            errors.append(error_msg)
+            print(error_msg)
 
     # Fetch Google Trends
     try:
@@ -72,16 +75,22 @@ def fetch_data():
             topic = row[0]
             sentiment = TextBlob(topic).sentiment.polarity
             save_to_db("Google Trends", topic, sentiment)
+            print(f"Saved Google Trend: {topic} with sentiment {sentiment}")
     except Exception as e:
-        errors.append(f"Google Trends Error: {e}")
+        error_msg = f"Google Trends Error: {e}"
+        errors.append(error_msg)
+        print(error_msg)
 
     # Fetch Reddit trends
     try:
         for submission in REDDIT.subreddit("all").hot(limit=10):
             sentiment = TextBlob(submission.title).sentiment.polarity
             save_to_db("Reddit Trends", submission.title, sentiment)
+            print(f"Saved Reddit Trend: {submission.title} with sentiment {sentiment}")
     except Exception as e:
-        errors.append(f"Reddit Trends Error: {e}")
+        error_msg = f"Reddit Trends Error: {e}"
+        errors.append(error_msg)
+        print(error_msg)
 
     return jsonify({"status": "Data fetched", "errors": errors})
 

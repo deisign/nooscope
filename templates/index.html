@@ -1,127 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nooscope Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center">Nooscope Dashboard</h1>
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="reddit-tab" data-bs-toggle="tab" data-bs-target="#reddit" type="button" role="tab" aria-controls="reddit" aria-selected="true">Reddit Trends</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="news-tab" data-bs-toggle="tab" data-bs-target="#news" type="button" role="tab" aria-controls="news" aria-selected="false">News Headlines</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="rss-tab" data-bs-toggle="tab" data-bs-target="#rss" type="button" role="tab" aria-controls="rss" aria-selected="false">RSS Feeds</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="trends-tab" data-bs-toggle="tab" data-bs-target="#trends" type="button" role="tab" aria-controls="trends" aria-selected="false">Google Trends</button>
-            </li>
-        </ul>
-        <div class="tab-content" id="myTabContent">
-            <!-- Reddit Trends -->
-            <div class="tab-pane fade show active" id="reddit" role="tabpanel" aria-labelledby="reddit-tab">
-                <h2 class="mt-4">Reddit Trends</h2>
-                <ul id="reddit-trends" class="list-group"></ul>
-            </div>
-            <!-- News Headlines -->
-            <div class="tab-pane fade" id="news" role="tabpanel" aria-labelledby="news-tab">
-                <h2 class="mt-4">Top News Headlines</h2>
-                <ul id="news-headlines" class="list-group"></ul>
-            </div>
-            <!-- RSS Feeds -->
-            <div class="tab-pane fade" id="rss" role="tabpanel" aria-labelledby="rss-tab">
-                <h2 class="mt-4">RSS Feeds</h2>
-                <h3>Russia</h3>
-                <ul id="rss-russia" class="list-group mb-4"></ul>
-                <h3>Ukraine</h3>
-                <ul id="rss-ukraine" class="list-group"></ul>
-            </div>
-            <!-- Google Trends -->
-            <div class="tab-pane fade" id="trends" role="tabpanel" aria-labelledby="trends-tab">
-                <h2 class="mt-4">Google Trends</h2>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Ukraine</th>
-                            <th>Russia</th>
-                        </tr>
-                    </thead>
-                    <tbody id="google-trends"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <h1>Nooscope Dashboard</h1>
 
-    <script>
-        // Fetch Reddit trends
-        fetch('/reddit-trends')
-            .then(response => response.json())
-            .then(data => {
-                const redditList = document.getElementById('reddit-trends');
-                data.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = "list-group-item";
-                    li.innerHTML = `<a href="${item.url}" target="_blank">${item.title}</a>`;
-                    redditList.appendChild(li);
-                });
-            });
+    <h2>RSS Feeds</h2>
+    <ul>
+        {% for topic, sentiment, date in rss_data %}
+            <li>{{ date }} - {{ topic }} (Sentiment: {{ sentiment }})</li>
+        {% endfor %}
+    </ul>
 
-        // Fetch News headlines
-        fetch('/news-headlines')
-            .then(response => response.json())
-            .then(data => {
-                const newsList = document.getElementById('news-headlines');
-                data.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = "list-group-item";
-                    li.innerHTML = `<a href="${item.url}" target="_blank">${item.title}</a>`;
-                    newsList.appendChild(li);
-                });
-            });
+    <h2>Google Trends</h2>
+    <ul>
+        {% for topic, sentiment, date in google_data %}
+            <li>{{ date }} - {{ topic }} (Sentiment: {{ sentiment }})</li>
+        {% endfor %}
+    </ul>
 
-        // Fetch RSS feeds
-        fetch('/rss-feed')
-            .then(response => response.json())
-            .then(data => {
-                const rssRussia = document.getElementById('rss-russia');
-                const rssUkraine = document.getElementById('rss-ukraine');
-                data.russia.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = "list-group-item";
-                    li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
-                    rssRussia.appendChild(li);
-                });
-                data.ukraine.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = "list-group-item";
-                    li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
-                    rssUkraine.appendChild(li);
-                });
-            });
-
-        // Fetch Google Trends
-        fetch('/google-trends')
-            .then(response => response.json())
-            .then(data => {
-                const trendsTable = document.getElementById('google-trends');
-                for (const [timestamp, values] of Object.entries(data)) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${timestamp}</td>
-                        <td>${values['Ukraine']}</td>
-                        <td>${values['Russia']}</td>
-                    `;
-                    trendsTable.appendChild(row);
-                }
-            });
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <h2>Reddit Trends</h2>
+    <ul>
+        {% for topic, sentiment, date in reddit_data %}
+            <li>{{ date }} - {{ topic }} (Sentiment: {{ sentiment }})</li>
+        {% endfor %}
+    </ul>
 </body>
 </html>

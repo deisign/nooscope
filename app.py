@@ -53,7 +53,6 @@ def init_db():
 @app.route('/')
 def index():
     """Render the main dashboard."""
-    init_db()  # Ensure database is initialized before querying
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
@@ -77,26 +76,48 @@ def fetch_data():
         # RSS Feeds
         for source, url in RSS_FEEDS.items():
             feed = feedparser.parse(url)
+            print(f"Fetching RSS feed for {source}")
             for entry in feed.entries[:5]:
                 sentiment = TextBlob(entry.title).sentiment.polarity
                 save_to_db("RSS Feed", entry.title, sentiment)
+                print(f"Saved RSS: {entry.title}")
 
         # Google Trends
         pytrends = TrendReq(hl='en-US', tz=360)
         trending_searches = pytrends.trending_searches()
+        print("Fetching Google Trends")
         for _, row in trending_searches.iterrows():
             topic = row[0]
             sentiment = TextBlob(topic).sentiment.polarity
             save_to_db("Google Trends", topic, sentiment)
+            print(f"Saved Google Trend: {topic}")
 
         # Reddit Trends
+        print("Fetching Reddit Trends")
         for submission in REDDIT.subreddit("all").hot(limit=10):
             sentiment = TextBlob(submission.title).sentiment.polarity
             save_to_db("Reddit Trends", submission.title, sentiment)
+            print(f"Saved Reddit Trend: {submission.title}")
 
         return jsonify({"status": "Data fetched and saved successfully"})
     except Exception as e:
+        print(f"Error in fetch_data: {e}")
         return jsonify({"error": f"Error fetching data: {e}"}), 500
+
+
+@app.route('/view-trends', methods=['GET'])
+def view_trends():
+    """View the content of the trends table."""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM trends")
+        rows = cursor.fetchall()
+        return jsonify({"data": rows})
+    except sqlite3.Error as e:
+        return jsonify({"error": f"Database error: {e}"}), 500
+    finally:
+        conn.close()
 
 
 def save_to_db(source, topic, sentiment):

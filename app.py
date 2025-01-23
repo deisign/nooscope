@@ -76,6 +76,7 @@ def index():
 def fetch_data():
     """Fetch data from all sources and save to the database."""
     init_db()  # Ensure database is initialized before inserting data
+    errors = []  # Список для хранения ошибок
     try:
         # RSS Feeds
         for source, url in RSS_FEEDS.items():
@@ -87,23 +88,33 @@ def fetch_data():
                 print(f"Saved RSS: {entry.title}")
 
         # Google Trends
-        pytrends = TrendReq(hl='en-US', tz=360)
-        trending_searches = pytrends.trending_searches()
-        print("Fetching Google Trends")
-        for _, row in trending_searches.iterrows():
-            topic = row[0]
-            sentiment = TextBlob(topic).sentiment.polarity
-            save_to_db("Google Trends", topic, sentiment)
-            print(f"Saved Google Trend: {topic}")
+        try:
+            pytrends = TrendReq(hl='en-US', tz=360)
+            trending_searches = pytrends.trending_searches()
+            print("Fetching Google Trends")
+            for _, row in trending_searches.iterrows():
+                topic = row[0]
+                sentiment = TextBlob(topic).sentiment.polarity
+                save_to_db("Google Trends", topic, sentiment)
+                print(f"Saved Google Trend: {topic}")
+        except Exception as e:
+            error_message = f"Google Trends Error: {e}"
+            print(error_message)
+            errors.append(error_message)
 
         # Reddit Trends
-        print("Fetching Reddit Trends")
-        for submission in REDDIT.subreddit("all").hot(limit=10):
-            sentiment = TextBlob(submission.title).sentiment.polarity
-            save_to_db("Reddit Trends", submission.title, sentiment)
-            print(f"Saved Reddit Trend: {submission.title}")
+        try:
+            print("Fetching Reddit Trends")
+            for submission in REDDIT.subreddit("all").hot(limit=10):
+                sentiment = TextBlob(submission.title).sentiment.polarity
+                save_to_db("Reddit Trends", submission.title, sentiment)
+                print(f"Saved Reddit Trend: {submission.title}")
+        except Exception as e:
+            error_message = f"Reddit Error: {e}"
+            print(error_message)
+            errors.append(error_message)
 
-        return jsonify({"status": "Data fetched and saved successfully"})
+        return jsonify({"status": "Data fetched and saved successfully", "errors": errors})
     except Exception as e:
         print(f"Error in fetch_data: {e}")
         return jsonify({"error": f"Error fetching data: {e}"}), 500

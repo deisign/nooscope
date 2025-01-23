@@ -53,17 +53,21 @@ def init_db():
 @app.route('/')
 def index():
     """Render the main dashboard."""
+    init_db()  # Ensure database is initialized before accessing
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT topic, sentiment, date FROM trends WHERE source = 'RSS Feed'")
-    rss_data = cursor.fetchall()
-    cursor.execute("SELECT topic, sentiment, date FROM trends WHERE source = 'Google Trends'")
-    google_data = cursor.fetchall()
-    cursor.execute("SELECT topic, sentiment, date FROM trends WHERE source = 'Reddit Trends'")
-    reddit_data = cursor.fetchall()
-
-    conn.close()
+    try:
+        cursor.execute("SELECT topic, sentiment, date FROM trends WHERE source = 'RSS Feed'")
+        rss_data = cursor.fetchall()
+        cursor.execute("SELECT topic, sentiment, date FROM trends WHERE source = 'Google Trends'")
+        google_data = cursor.fetchall()
+        cursor.execute("SELECT topic, sentiment, date FROM trends WHERE source = 'Reddit Trends'")
+        reddit_data = cursor.fetchall()
+    except sqlite3.Error as e:
+        return jsonify({"error": f"Database error: {e}"}), 500
+    finally:
+        conn.close()
 
     return render_template('index.html', rss_data=rss_data, google_data=google_data, reddit_data=reddit_data)
 
@@ -108,6 +112,7 @@ def fetch_data():
 @app.route('/view-trends', methods=['GET'])
 def view_trends():
     """View the content of the trends table."""
+    init_db()  # Ensure database is initialized before accessing
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     try:

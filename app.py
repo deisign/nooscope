@@ -9,19 +9,21 @@ import os
 app = Flask(__name__)
 DATABASE = 'noscope.db'
 
+# Reddit API setup
 REDDIT = praw.Reddit(
     client_id=os.getenv("REDDIT_CLIENT_ID"),
     client_secret=os.getenv("REDDIT_CLIENT_SECRET"),
     user_agent=os.getenv("REDDIT_USER_AGENT")
 )
 
+# RSS feeds setup
 RSS_FEEDS = {
     "Russia": "https://news.google.com/rss/search?q=Russia&hl=en-US&gl=US&ceid=US:en",
     "Ukraine": "https://news.google.com/rss/search?q=Ukraine&hl=en-US&gl=US&ceid=US:en"
 }
 
+# Initialize the database
 def init_db():
-    """Initialize the SQLite database."""
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     cursor.execute('''
@@ -37,8 +39,8 @@ def init_db():
     conn.close()
     print("Database initialized: 'trends' table created or already exists.")
 
+# Save data to the database
 def save_to_db(source, topic, sentiment):
-    """Save a trend to the SQLite database."""
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     cursor.execute('''
@@ -93,20 +95,6 @@ def fetch_data():
         print(error_msg)
 
     return jsonify({"status": "Data fetched", "errors": errors})
-
-@app.route('/view-trends', methods=['GET'])
-def view_trends():
-    """View the content of the trends table."""
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT * FROM trends")
-        rows = cursor.fetchall()
-        return jsonify({"data": rows})
-    except sqlite3.Error as e:
-        return jsonify({"error": f"Database error: {e}"}), 500
-    finally:
-        conn.close()
 
 @app.route('/')
 def index():
